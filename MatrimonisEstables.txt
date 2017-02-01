@@ -1,0 +1,75 @@
+|n w m mchoice wrank wengagement corutinaMain|
+n := 3.
+w := Array new: n.
+m := Array new: n.
+mchoice := Matrix rows: 3 columns: 3.
+wrank := Matrix rows: 3 columns: 3.
+wengagement := Array new: n.
+corutinaMain := Coroutine maker: [ :resume :value |
+				"Transcript show: 'This is corutinaMain'; cr."
+				"for para que las corutinas tengan su indice en value"
+				1 to: n do: [:each | 
+							resume value: (m at: each) value: each.
+							resume value: (w at: each) value: each.
+							].
+				"set up choices and rankings"
+				mchoice at: 1 at: 1 put: 1. mchoice at: 1 at: 2 put: 2. mchoice at: 1 at: 3 put: 3.
+				mchoice at: 2 at: 1 put: 1. mchoice at: 2 at: 2 put: 3. mchoice at: 2 at: 3 put: 2.
+				mchoice at: 3 at: 1 put: 2. mchoice at: 3 at: 2 put: 3. mchoice at: 3 at: 3 put: 1.
+				wrank at: 1 at: 1 put: 2. wrank at: 1 at: 2 put: 1. wrank at: 1 at: 3 put: 3.
+				wrank at: 2 at: 1 put: 2. wrank at: 2 at: 2 put: 3. wrank at: 2 at: 3 put: 1.
+				wrank at: 3 at: 1 put: 1. wrank at: 3 at: 2 put: 2. wrank at: 3 at: 3 put: 3.
+				"mchoice at: 1 at: 1 put: 2. mchoice at: 1 at: 2 put: 1. mchoice at: 1 at: 3 put: 3.
+				mchoice at: 2 at: 1 put: 1. mchoice at: 2 at: 2 put: 2. mchoice at: 2 at: 3 put: 3.
+				mchoice at: 3 at: 1 put: 1. mchoice at: 3 at: 2 put: 3. mchoice at: 3 at: 3 put: 2.
+				wrank at: 1 at: 1 put: 1. wrank at: 1 at: 2 put: 2. wrank at: 1 at: 3 put: 3.
+				wrank at: 2 at: 1 put: 3. wrank at: 2 at: 2 put: 2. wrank at: 2 at: 3 put: 1.
+				wrank at: 3 at: 1 put: 3. wrank at: 3 at: 2 put: 1. wrank at: 3 at: 3 put: 2."
+				1 to: n do: [:i | 
+							resume value: (m at: i) value: nil.
+							].
+				"here output the solution held in wengagement"
+				Transcript show: wengagement.
+				].
+1 to: n do: [:each | 
+			 m at: each put:
+				(
+				Coroutine maker: [ :resume :value | 
+					|choice|
+				"value = me/manindex"
+				"Transcript show: 'This is a man coroutine and value = '; show: value; cr."
+				resume value: corutinaMain value: nil.
+				"propose to preferences in order"
+				1 to: n do: [:j |
+							choice := mchoice at: value at: j.
+							resume value: (w at: choice) value: value.
+							].
+				]
+				).
+			w at: each put:
+				(
+				Coroutine maker: [ :resume :value | 
+					|suitor jilt|
+				"value = me/womanindex"
+				"Transcript show: 'This is a woman coroutine and value = '; show: value; cr."
+				suitor := resume value: corutinaMain value: nil.
+				"accept first offer"
+				wengagement at: value put: suitor.
+				suitor := resume value: corutinaMain value: nil.
+				"loop all the while accepting better offers"
+				1 to: n-1 do: [:loop |
+							(wrank at: value at: suitor) < (wrank at: value at: (wengagement at: value))
+							ifTrue: [
+								jilt := wengagement at: value.
+								wengagement at: value put: suitor.
+								suitor := resume value: (m at: jilt) value: nil.
+								]
+							ifFalse: [
+								suitor := resume value: (m at: suitor) value: nil.
+								]
+							].
+				]
+				).
+			 ].
+		
+corutinaMain value: nil.
